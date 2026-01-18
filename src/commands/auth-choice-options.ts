@@ -160,26 +160,26 @@ export function buildAuthChoiceOptions(params: {
     options.push({
       value: "claude-cli",
       label: "Anthropic token (Claude Code CLI)",
-      hint: `reuses existing Claude Code auth · ${formatOAuthHint(claudeCli.expires)}`,
+      hint: `Reuses existing Claude Code auth · ${formatOAuthHint(claudeCli.expires)}`,
     });
   } else if (params.includeClaudeCliIfMissing && platform === "darwin") {
     options.push({
       value: "claude-cli",
       label: "Anthropic token (Claude Code CLI)",
-      hint: "reuses existing Claude Code auth · requires Keychain access",
+      hint: "Uses Claude Code auth · requires Keychain access",
     });
   }
 
   options.push({
     value: "setup-token",
     label: "Anthropic token (run setup-token)",
-    hint: "runs `claude setup-token` · opens browser for fresh OAuth login",
+    hint: "Runs `claude setup-token` · opens browser for fresh OAuth login",
   });
 
   options.push({
     value: "token",
     label: "Anthropic token (paste setup-token)",
-    hint: "run `claude setup-token` elsewhere, then paste the token here",
+    hint: "Run `claude setup-token` elsewhere, then paste the token here",
   });
 
   options.push({

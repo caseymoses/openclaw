@@ -6,6 +6,7 @@ Docs: https://docs.clawd.bot
 
 ### Changes
 - Dependencies: update core + plugin deps (grammy, vitest, openai, Microsoft agents hosting, etc.).
+- Onboarding: clarify Anthropic token option hints in the onboarding wizard. (#1185) — thanks @KrauseFx.
 - Onboarding: add allowlist prompts and username-to-id resolution across core and extension channels.
 - Docs: clarify allowlist input types and onboarding behavior for messaging channels.
 
