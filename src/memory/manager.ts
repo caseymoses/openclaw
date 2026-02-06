@@ -1812,9 +1812,20 @@ export class MemoryIndexManager implements MemorySearchManager {
     const missingChunks = missing.map((m) => m.chunk);
     const batches = this.buildEmbeddingBatches(missingChunks);
     const toCache: Array<{ hash: string; embedding: number[] }> = [];
+    // Safety guard: truncate any oversized chunk text before sending to embedding API.
+    // OpenAI text-embedding-3-small has an 8,192-token limit; at worst-case ~2 chars/token,
+    // 16,000 chars is a safe ceiling that prevents 400 errors.
+    const EMBED_SAFE_MAX_CHARS = 16_000;
+
     let cursor = 0;
     for (const batch of batches) {
-      const batchEmbeddings = await this.embedBatchWithRetry(batch.map((chunk) => chunk.text));
+      const batchEmbeddings = await this.embedBatchWithRetry(
+        batch.map((chunk) =>
+          chunk.text.length > EMBED_SAFE_MAX_CHARS
+            ? chunk.text.slice(0, EMBED_SAFE_MAX_CHARS)
+            : chunk.text,
+        ),
+      );
       for (let i = 0; i < batch.length; i += 1) {
         const item = missing[cursor + i];
         const embedding = batchEmbeddings[i] ?? [];
