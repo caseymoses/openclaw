@@ -171,11 +171,7 @@ export function chunkMarkdown(
   if (lines.length === 0) {
     return [];
   }
-  // Cap chunk size to stay well under the 8,192-token embedding model limit.
-  // Session transcripts with JSON/code have ~2-3 chars/token, so 24,000 chars
-  // is a safe ceiling (~8,000 tokens at worst-case 3 chars/token).
-  const EMBEDDING_SAFE_MAX_CHARS = 24_000;
-  const maxChars = Math.min(Math.max(32, chunking.tokens * 4), EMBEDDING_SAFE_MAX_CHARS);
+  const maxChars = Math.max(32, chunking.tokens * 4);
   const overlapChars = Math.max(0, chunking.overlap * 4);
   const chunks: MemoryChunk[] = [];
 
