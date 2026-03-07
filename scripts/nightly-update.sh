@@ -77,9 +77,29 @@ pnpm install 2>&1 | tail -3 | tee -a "$LOG"
 log "Building..."
 pnpm build 2>&1 | tail -5 | tee -a "$LOG"
 
-# Restart gateway
+# Restart gateway (stop + start via launchctl with extended wait)
 log "Restarting gateway..."
-openclaw gateway restart 2>&1 | tee -a "$LOG"
+launchctl stop ai.openclaw.gateway 2>/dev/null || true
+sleep 5
+launchctl start ai.openclaw.gateway 2>/dev/null || true
+
+# Wait up to 3 minutes for gateway to come back up
+MAX_WAIT=180
+WAITED=0
+GATEWAY_UP=false
+while [ $WAITED -lt $MAX_WAIT ]; do
+    if openclaw status 2>/dev/null | grep -q "RPC probe: ok"; then
+        GATEWAY_UP=true
+        log "Gateway is up after ${WAITED}s"
+        break
+    fi
+    sleep 5
+    WAITED=$((WAITED + 5))
+done
+
+if [ "$GATEWAY_UP" = false ]; then
+    log "WARNING: Gateway did not come up within ${MAX_WAIT}s after update — LaunchAgent will retry"
+fi
 
 NEW_VERSION=$(git describe --tags --always 2>/dev/null || git rev-parse --short HEAD)
 log "=== Update complete: $NEW_VERSION ==="
