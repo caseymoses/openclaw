@@ -38,6 +38,7 @@ import {
   type ChannelPlugin,
   type ResolvedSlackAccount,
 } from "openclaw/plugin-sdk/slack";
+import { buildPassiveProbedChannelStatusSummary } from "../../shared/channel-status-summary.js";
 import { getSlackRuntime } from "./runtime.js";
 
 const meta = getChatChannelMeta("slack");
@@ -244,6 +245,18 @@ export const slackPlugin: ChannelPlugin<ResolvedSlackAccount> = {
   },
   resolver: {
     resolveTargets: async ({ cfg, accountId, inputs, kind }) => {
+      const toResolvedTarget = <
+        T extends { input: string; resolved: boolean; id?: string; name?: string },
+      >(
+        entry: T,
+        note?: string,
+      ) => ({
+        input: entry.input,
+        resolved: entry.resolved,
+        id: entry.id,
+        name: entry.name,
+        note,
+      });
       const account = resolveSlackAccount({ cfg, accountId });
       const token = account.config.userToken?.trim() || account.botToken?.trim();
       if (!token) {
@@ -258,25 +271,15 @@ export const slackPlugin: ChannelPlugin<ResolvedSlackAccount> = {
           token,
           entries: inputs,
         });
-        return resolved.map((entry) => ({
-          input: entry.input,
-          resolved: entry.resolved,
-          id: entry.id,
-          name: entry.name,
-          note: entry.archived ? "archived" : undefined,
-        }));
+        return resolved.map((entry) =>
+          toResolvedTarget(entry, entry.archived ? "archived" : undefined),
+        );
       }
       const resolved = await getSlackRuntime().channel.slack.resolveUserAllowlist({
         token,
         entries: inputs,
       });
-      return resolved.map((entry) => ({
-        input: entry.input,
-        resolved: entry.resolved,
-        id: entry.id,
-        name: entry.name,
-        note: entry.note,
-      }));
+      return resolved.map((entry) => toResolvedTarget(entry, entry.note));
     },
   },
   actions: {
@@ -419,17 +422,11 @@ export const slackPlugin: ChannelPlugin<ResolvedSlackAccount> = {
       lastStopAt: null,
       lastError: null,
     },
-    buildChannelSummary: ({ snapshot }) => ({
-      configured: snapshot.configured ?? false,
-      botTokenSource: snapshot.botTokenSource ?? "none",
-      appTokenSource: snapshot.appTokenSource ?? "none",
-      running: snapshot.running ?? false,
-      lastStartAt: snapshot.lastStartAt ?? null,
-      lastStopAt: snapshot.lastStopAt ?? null,
-      lastError: snapshot.lastError ?? null,
-      probe: snapshot.probe,
-      lastProbeAt: snapshot.lastProbeAt ?? null,
-    }),
+    buildChannelSummary: ({ snapshot }) =>
+      buildPassiveProbedChannelStatusSummary(snapshot, {
+        botTokenSource: snapshot.botTokenSource ?? "none",
+        appTokenSource: snapshot.appTokenSource ?? "none",
+      }),
     probeAccount: async ({ account, timeoutMs }) => {
       const token = account.botToken?.trim();
       if (!token) {
